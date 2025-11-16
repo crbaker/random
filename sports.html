@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Sports Drink & Gel Calculator (Drink + Gel Water by Solids% or Volume)</title>
+<style>
+  :root{
+    --bg:#0f172a;--card:#111827;--muted:#334155;--text:#e5e7eb;--accent:#22d3ee;--ok:#10b981;--warn:#f59e0b;--border:#1f2937;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:linear-gradient(180deg,#0b1220,#0f172a 20%,#0b1220);color:var(--text);font:14px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial}
+  header{padding:20px 16px 4px;text-align:center}
+  header h1{margin:0;font-size:20px;font-weight:700;letter-spacing:.2px}
+  header p{margin:.35rem 0 0;color:#cbd5e1}
+  .wrap{max-width:1000px;margin:0 auto;padding:16px;display:grid;gap:16px}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:16px}
+  .grid{display:grid;grid-template-columns:repeat(12,1fr);gap:12px}
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .col-6{grid-column:span 6}
+  .col-12{grid-column:span 12}
+  label{display:block;font-weight:600;margin:6px 0 6px;color:#cbd5e1}
+  input[type="number"], input[type="text"]{
+    width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--border);background:#0b1020;color:var(--text);
+  }
+  input[type="range"]{width:100%}
+  .muted{color:#94a3b8;font-size:12px}
+  .pill{display:inline-block;padding:6px 10px;border:1px solid var(--muted);border-radius:999px;margin:4px 6px 0 0;cursor:pointer}
+  .pill:hover{border-color:var(--accent)}
+  .btn{background:var(--accent);color:#06202a;border:none;border-radius:10px;padding:10px 14px;font-weight:700;cursor:pointer}
+  .btn:active{transform:translateY(1px)}
+  .table{width:100%;border-collapse:collapse;margin-top:10px}
+  .table th,.table td{border-top:1px dashed var(--border);padding:8px 6px;text-align:right}
+  .table th:first-child,.table td:first-child{text-align:left}
+  .kpi{display:flex;gap:12px;flex-wrap:wrap;margin-top:8px}
+  .kpi .chip{border:1px solid var(--muted);padding:8px 10px;border-radius:12px}
+  .warn{color:var(--warn);margin-top:8px}
+  .mode{display:flex;gap:16px;align-items:center;flex-wrap:wrap;margin:8px 0}
+  .hidden{display:none}
+  footer{opacity:.8;text-align:center;padding:12px;font-size:12px}
+  @media (max-width:780px){
+    .grid{grid-template-columns:repeat(6,1fr)}
+    .col-6{grid-column:span 6}
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>Sports Drink & Gel Calculator</h1>
+  <p>Ingredients: <strong>Maltodextrin</strong> + <strong>Fructose</strong> (both) · <strong>Pectin</strong> (gel) · <strong>Water</strong> (gel)</p>
+</header>
+
+<div class="wrap">
+
+  <!-- RATIO CARD -->
+  <section class="card">
+    <h2 style="margin:0 0 6px">Carb Ratio</h2>
+    <p class="muted">Adjust the split between Maltodextrin (glucose source) and Fructose.</p>
+    <div class="row">
+      <div>
+        <label for="ratioM">Maltodextrin %</label>
+        <input id="ratioM" type="number" min="0" max="100" step="0.1" value="60">
+      </div>
+      <div>
+        <label for="ratioF">Fructose %</label>
+        <input id="ratioF" type="number" min="0" max="100" step="0.1" value="40">
+      </div>
+    </div>
+    <div style="margin-top:8px">
+      <input id="ratioSlider" type="range" min="0" max="100" value="60" />
+      <div class="muted">Slide to change Maltodextrin % (Fructose auto-fills to 100%).</div>
+    </div>
+    <div style="margin-top:8px">
+      <span class="pill" data-preset="66.6667,33.3333">2:1 (≈66.7/33.3)</span>
+      <span class="pill" data-preset="55.5556,44.4444">1:0.8 (≈55.6/44.4)</span>
+      <span class="pill" data-preset="50,50">1:1 (50/50)</span>
+      <span class="pill" data-preset="70,30">70/30</span>
+      <span class="pill" data-preset="60,40">60/40</span>
+    </div>
+    <div class="kpi">
+      <div class="chip">Maltodextrin: <strong id="kpiM">60%</strong></div>
+      <div class="chip">Fructose: <strong id="kpiF">40%</strong></div>
+    </div>
+  </section>
+
+  <!-- DRINK CARD -->
+  <section class="card">
+    <h2 style="margin:0 0 6px">Sports Drink</h2>
+    <p class="muted">Compute grams per bottle (or per batch) from volume and target concentration (g per 100&nbsp;ml).</p>
+    <div class="grid">
+      <div class="col-6">
+        <label for="drinkVol">Bottle volume (ml)</label>
+        <input id="drinkVol" type="number" min="50" step="10" value="500">
+      </div>
+      <div class="col-6">
+        <label for="drinkConc">Target concentration (g/100&nbsp;ml)</label>
+        <input id="drinkConc" type="number" min="0" step="0.1" value="10">
+      </div>
+      <div class="col-6">
+        <label for="drinkCount">Number of bottles</label>
+        <input id="drinkCount" type="number" min="1" step="1" value="1">
+      </div>
+      <div class="col-6" style="display:flex;align-items:flex-end;gap:8px">
+        <button id="drinkCalc" class="btn">Calculate drink</button>
+        <button id="drinkClear" class="btn" style="background:#475569;color:#e2e8f0">Clear</button>
+      </div>
+    </div>
+
+    <table class="table" id="drinkTable" style="display:none">
+      <thead>
+        <tr>
+          <th>Per bottle</th>
+          <th>Total carbs (g)</th>
+          <th>Maltodextrin (g)</th>
+          <th>Fructose (g)</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+      <tfoot>
+        <tr>
+          <th>Batch total</th>
+          <th id="drinkTotalCarbs">0</th>
+          <th id="drinkTotalM">0</th>
+          <th id="drinkTotalF">0</th>
+        </tr>
+      </tfoot>
+    </table>
+    <div class="muted" style="margin-top:6px">Tip: 8–12 g/100&nbsp;ml is a typical range for many athletes. Adjust based on your tolerance.</div>
+  </section>
+
+  <!-- GEL CARD -->
+  <section class="card">
+    <h2 style="margin:0 0 6px">Sports Gel</h2>
+    <p class="muted">Choose a water method: by <strong>solids %</strong> or by <strong>target final volume</strong> per gel.</p>
+
+    <div class="mode">
+      <label><input type="radio" name="waterMode" value="solids" checked> By solids %</label>
+      <label><input type="radio" name="waterMode" value="volume"> By final volume (ml)</label>
+    </div>
+
+    <div class="grid">
+      <div class="col-6">
+        <label for="gelCarbs">Carbs per gel (g)</label>
+        <input id="gelCarbs" type="number" min="5" step="1" value="30">
+      </div>
+      <div class="col-6">
+        <label for="gelCount">Number of gels</label>
+        <input id="gelCount" type="number" min="1" step="1" value="1">
+      </div>
+
+      <div class="col-6">
+        <label for="gelPectinPct">Pectin % of total dry mix</label>
+        <input id="gelPectinPct" type="number" min="0" max="100" step="0.1" value="2.5">
+        <div class="muted">Commonly 1.5–3.5% depending on desired firmness.</div>
+      </div>
+
+      <!-- Solids % inputs -->
+      <div class="col-6 mode-solids">
+        <label for="gelSolidsPct">Target solids % of final gel</label>
+        <input id="gelSolidsPct" type="number" min="30" max="90" step="0.1" value="68">
+        <div class="muted">Presets:
+          <span class="pill solids" data-s="60">60%</span>
+          <span class="pill solids" data-s="65">65%</span>
+          <span class="pill solids" data-s="70">70%</span>
+        </div>
+      </div>
+
+      <!-- Volume inputs -->
+      <div class="col-6 mode-volume hidden">
+        <label for="gelFinalVol">Target final volume per gel (ml)</label>
+        <input id="gelFinalVol" type="number" min="10" step="1" value="40">
+        <div class="muted">1&nbsp;ml ≈ 1&nbsp;g; final mass ≈ volume.</div>
+      </div>
+
+      <div class="col-12" style="display:flex;align-items:flex-end;gap:8px">
+        <button id="gelCalc" class="btn">Calculate gel</button>
+        <button id="gelClear" class="btn" style="background:#475569;color:#e2e8f0">Clear</button>
+      </div>
+    </div>
+
+    <div id="gelWarning" class="warn hidden"></div>
+
+    <table class="table" id="gelTable" style="display:none">
+      <thead>
+        <tr>
+          <th>Per gel</th>
+          <th>Total dry (g)</th>
+          <th>Maltodextrin (g)</th>
+          <th>Fructose (g)</th>
+          <th>Pectin (g)</th>
+          <th>Water (g ≈ ml)</th>
+          <th>Final mass (g)</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+      <tfoot>
+        <tr>
+          <th>Batch total</th>
+          <th id="gelTotalDry">0</th>
+          <th id="gelTotalM">0</th>
+          <th id="gelTotalF">0</th>
+          <th id="gelTotalP">0</th>
+          <th id="gelTotalWater">0</th>
+          <th id="gelTotalMass">0</th>
+        </tr>
+      </tfoot>
+    </table>
+
+    <div class="muted" style="margin-top:6px">
+      Notes:
+      <ul style="margin:6px 0 0 18px">
+        <li><strong>Dry mix:</strong> If p is pectin fraction of dry, total&nbsp;dry = carbs ÷ (1 − p); pectin = total&nbsp;dry − carbs.</li>
+        <li><strong>Water by solids %:</strong> With solids fraction s, final mass = total&nbsp;dry ÷ s; water = final − dry.</li>
+        <li><strong>Water by volume:</strong> Final mass ≈ target volume (ml); water = final − dry.</li>
+        <li>All values rounded to 0.1 g.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2 style="margin:0 0 6px">Assumptions</h2>
+    <ul class="muted" style="margin:6px 0 0 16px">
+      <li>Maltodextrin% + Fructose% = 100% (applies to carb grams only).</li>
+      <li><strong>Drink:</strong> Total carbs = volume (ml) × concentration (g/100&nbsp;ml) ÷ 100.</li>
+      <li><strong>Gel:</strong> Water computed by the selected method (solids % or final volume).</li>
+    </ul>
+  </section>
+
+</div>
+
+<footer>Built with plain HTML + JavaScript. No tracking, no libraries.</footer>
+
+<script>
+(function(){
+  // ------- helpers -------
+  const $ = (s,root=document)=>root.querySelector(s);
+  const $$ = (s,root=document)=>Array.from(root.querySelectorAll(s));
+  const clamp = (v,min,max)=>Math.max(min,Math.min(max,v));
+  const round1 = (x)=>Math.round(x*10)/10;
+
+  // ------- ratio -------
+  const ratioM = $('#ratioM'), ratioF = $('#ratioF'), ratioSlider = $('#ratioSlider');
+  const kpiM = $('#kpiM'), kpiF = $('#kpiF');
+
+  function syncFromSlider(){
+    const m = clamp(parseFloat(ratioSlider.value)||0,0,100);
+    ratioM.value = m.toFixed(1);
+    ratioF.value = (100 - m).toFixed(1);
+    updateKPIs();
+  }
+  function syncFromInputs(changed){
+    let m = parseFloat(ratioM.value)||0, f = parseFloat(ratioF.value)||0;
+    if(changed==='M'){ m=clamp(m,0,100); f = 100 - m; }
+    else { f=clamp(f,0,100); m = 100 - f; }
+    ratioM.value = m.toFixed(1);
+    ratioF.value = f.toFixed(1);
+    ratioSlider.value = m.toFixed(1);
+    updateKPIs();
+  }
+  function updateKPIs(){
+    kpiM.textContent = `${parseFloat(ratioM.value).toFixed(1)}%`;
+    kpiF.textContent = `${parseFloat(ratioF.value).toFixed(1)}%`;
+  }
+  $$('.pill[data-preset]').forEach(el=>{
+    el.addEventListener('click',()=>{
+      const [m,f] = el.dataset.preset.split(',').map(parseFloat);
+      ratioM.value = m.toFixed(1); ratioF.value = f.toFixed(1); ratioSlider.value = m.toFixed(1); updateKPIs();
+    });
+  });
+  ratioSlider.addEventListener('input', syncFromSlider);
+  ratioM.addEventListener('input', ()=>syncFromInputs('M'));
+  ratioF.addEventListener('input', ()=>syncFromInputs('F'));
+  updateKPIs();
+
+  // ------- drink -------
+  const drinkVol = $('#drinkVol'), drinkConc = $('#drinkConc'), drinkCount = $('#drinkCount');
+  const drinkTable = $('#drinkTable'), drinkBody = drinkTable.querySelector('tbody');
+  const drinkTotalCarbs = $('#drinkTotalCarbs'), drinkTotalM = $('#drinkTotalM'), drinkTotalF = $('#drinkTotalF');
+
+  function calcDrink(){
+    const vol = clamp(parseFloat(drinkVol.value)||0,0,100000);
+    const conc = clamp(parseFloat(drinkConc.value)||0,0,500);
+    const count = clamp(parseInt(drinkCount.value)||0,0,1000);
+    const carbsPer = vol * conc / 100.0;
+    const mPct = parseFloat(ratioM.value)/100.0, fPct = parseFloat(ratioF.value)/100.0;
+    const mPer = round1(carbsPer * mPct), fPer = round1(carbsPer * fPct);
+
+    drinkBody.innerHTML = `
+      <tr>
+        <td>Per ${round1(vol)} ml bottle</td>
+        <td>${round1(carbsPer)}</td>
+        <td>${mPer}</td>
+        <td>${fPer}</td>
+      </tr>`;
+    drinkTotalCarbs.textContent = round1(carbsPer * count);
+    drinkTotalM.textContent = round1(mPer * count);
+    drinkTotalF.textContent = round1(fPer * count);
+    drinkTable.style.display = 'table';
+  }
+  function clearDrink(){
+    drinkBody.innerHTML = '';
+    drinkTotalCarbs.textContent = '0'; drinkTotalM.textContent = '0'; drinkTotalF.textContent = '0';
+    drinkTable.style.display = 'none';
+  }
+  $('#drinkCalc').addEventListener('click', calcDrink);
+  $('#drinkClear').addEventListener('click', clearDrink);
+
+  // ------- gel (solids% or volume) -------
+  const gelCarbs = $('#gelCarbs'), gelCount = $('#gelCount'), gelPectinPct = $('#gelPectinPct');
+  const gelSolidsPct = $('#gelSolidsPct'), gelFinalVol = $('#gelFinalVol');
+  const gelTable = $('#gelTable'), gelBody = gelTable.querySelector('tbody');
+  const gelTotalDry = $('#gelTotalDry'), gelTotalM = $('#gelTotalM'), gelTotalF = $('#gelTotalF');
+  const gelTotalP = $('#gelTotalP'), gelTotalWater = $('#gelTotalWater'), gelTotalMass = $('#gelTotalMass');
+  const gelWarning = $('#gelWarning');
+  const modeSolidsBox = $('.mode-solids'), modeVolBox = $('.mode-volume');
+
+  $$('input[name="waterMode"]').forEach(r=>{
+    r.addEventListener('change',()=>{
+      const mode = getMode();
+      if(mode==='solids'){ modeSolidsBox.classList.remove('hidden'); modeVolBox.classList.add('hidden'); }
+      else { modeSolidsBox.classList.add('hidden'); modeVolBox.classList.remove('hidden'); }
+      gelWarning.classList.add('hidden'); gelWarning.textContent='';
+    });
+  });
+  $$('.pill.solids').forEach(el=>{
+    el.addEventListener('click',()=>{ gelSolidsPct.value = el.dataset.s; });
+  });
+
+  function getMode(){ return $('input[name="waterMode"]:checked').value; }
+
+  function calcGel(){
+    gelWarning.classList.add('hidden'); gelWarning.textContent='';
+    const carbsPerGel = clamp(parseFloat(gelCarbs.value)||0,0,1000);
+    const count = clamp(parseInt(gelCount.value)||0,0,1000);
+    const pDryPct = clamp(parseFloat(gelPectinPct.value)||0,0,100)/100.0;
+
+    // Dry mix
+    const totalDryPer = carbsPerGel / (1 - pDryPct);
+    const pectinPer = totalDryPer - carbsPerGel;
+
+    // Split carbs by ratio
+    const mPct = parseFloat(ratioM.value)/100.0, fPct = parseFloat(ratioF.value)/100.0;
+    const mPer = carbsPerGel * mPct, fPer = carbsPerGel * fPct;
+
+    // Water & final mass by selected method
+    let finalMassPer, waterPer;
+    if(getMode()==='solids'){
+      const sPct = clamp(parseFloat(gelSolidsPct.value)||0,1,100)/100.0;
+      finalMassPer = totalDryPer / sPct;
+      waterPer = finalMassPer - totalDryPer;
+    } else {
+      const volMl = clamp(parseFloat(gelFinalVol.value)||0,0,1000);
+      // 1 ml ≈ 1 g final mass
+      finalMassPer = volMl;
+      if(finalMassPer < totalDryPer){
+        // impossible to hit this volume: warn and set water to zero (final = dry)
+        gelWarning.textContent = `Target volume (${round1(finalMassPer)} ml) is smaller than dry mass (${round1(totalDryPer)} g). Increase volume or reduce solids.`;
+        gelWarning.classList.remove('hidden');
+        finalMassPer = totalDryPer;
+      }
+      waterPer = finalMassPer - totalDryPer;
+    }
+
+    gelBody.innerHTML = `
+      <tr>
+        <td>Per gel</td>
+        <td>${round1(totalDryPer)}</td>
+        <td>${round1(mPer)}</td>
+        <td>${round1(fPer)}</td>
+        <td>${round1(pectinPer)}</td>
+        <td>${round1(waterPer)}</td>
+        <td>${round1(finalMassPer)}</td>
+      </tr>`;
+
+    gelTotalDry.textContent   = round1(totalDryPer * count);
+    gelTotalM.textContent     = round1(mPer * count);
+    gelTotalF.textContent     = round1(fPer * count);
+    gelTotalP.textContent     = round1(pectinPer * count);
+    gelTotalWater.textContent = round1(waterPer * count);
+    gelTotalMass.textContent  = round1(finalMassPer * count);
+    gelTable.style.display = 'table';
+  }
+  function clearGel(){
+    gelBody.innerHTML = '';
+    gelTotalDry.textContent = '0'; gelTotalM.textContent = '0'; gelTotalF.textContent = '0';
+    gelTotalP.textContent = '0'; gelTotalWater.textContent = '0'; gelTotalMass.textContent = '0';
+    gelWarning.classList.add('hidden'); gelWarning.textContent='';
+    gelTable.style.display = 'none';
+  }
+  $('#gelCalc').addEventListener('click', calcGel);
+  $('#gelClear').addEventListener('click', clearGel);
+
+  // initial render
+  calcDrink();
+  calcGel();
+})();
+</script>
+</body>
+</html>
