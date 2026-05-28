@@ -1,0 +1,641 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>EMGuidance — Content Delivery &amp; User Sync</title>
+<style>
+  :root {
+    --bg: #0a0e1a;
+    --bg-2: #0f1524;
+    --panel: #161d31;
+    --panel-2: #1d2541;
+    --border: #2a3454;
+    --text: #e4e9f2;
+    --muted: #8893b4;
+    --soft: #b6bfd9;
+    --accent: #4dabf7;
+    --accent-2: #b197fc;
+    --green: #51cf66;
+    --yellow: #ffd43b;
+    --orange: #ff922b;
+    --red: #ff6b6b;
+    --teal: #20c997;
+    --pink: #f06595;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, Helvetica, Arial, sans-serif;
+    --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text); font-family: var(--sans); height: 100%; overflow: hidden; }
+
+  .deck { position: relative; width: 100vw; height: 100vh; overflow: hidden; }
+
+  .slide {
+    position: absolute; inset: 0; padding: 60px 80px;
+    display: flex; flex-direction: column; justify-content: center;
+    opacity: 0; pointer-events: none; transition: opacity 0.35s ease;
+    overflow-y: auto;
+  }
+  .slide.active { opacity: 1; pointer-events: auto; }
+
+  .eyebrow {
+    color: var(--accent); font-size: 13px; font-weight: 600; letter-spacing: 0.18em;
+    text-transform: uppercase; margin-bottom: 12px;
+  }
+  .eyebrow.purple { color: var(--accent-2); }
+  .eyebrow.teal   { color: var(--teal); }
+  .eyebrow.orange { color: var(--orange); }
+
+  h1 { font-size: 56px; line-height: 1.05; margin: 0 0 24px; letter-spacing: -0.02em; font-weight: 700; }
+  h2 { font-size: 42px; line-height: 1.1; margin: 0 0 28px; letter-spacing: -0.015em; font-weight: 700; color: #f4f6fb; }
+  h3 { font-size: 22px; margin: 0 0 12px; color: #f4f6fb; font-weight: 600; }
+
+  p.lead { font-size: 20px; color: var(--soft); max-width: 900px; line-height: 1.5; margin: 0 0 16px; }
+  p { font-size: 17px; color: var(--soft); line-height: 1.55; margin: 0 0 12px; }
+
+  /* navigation */
+  .nav {
+    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+    display: flex; align-items: center; gap: 16px; background: var(--panel);
+    border: 1px solid var(--border); border-radius: 999px; padding: 8px 16px;
+    backdrop-filter: blur(10px); z-index: 50;
+  }
+  .nav button {
+    background: transparent; border: 0; color: var(--text); cursor: pointer;
+    font-size: 18px; padding: 4px 10px; border-radius: 6px;
+  }
+  .nav button:hover { background: var(--panel-2); }
+  .nav .counter { color: var(--muted); font-size: 13px; font-variant-numeric: tabular-nums; min-width: 60px; text-align: center; }
+
+  .progress {
+    position: fixed; top: 0; left: 0; height: 3px; background: var(--accent);
+    transition: width 0.3s ease; z-index: 60;
+  }
+
+  /* generic blocks */
+  .grid { display: grid; gap: 18px; }
+  .grid-2 { grid-template-columns: 1fr 1fr; }
+  .grid-3 { grid-template-columns: repeat(3, 1fr); }
+  .grid-4 { grid-template-columns: repeat(4, 1fr); }
+
+  .card {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 14px;
+    padding: 22px 24px;
+  }
+  .card .icon {
+    width: 44px; height: 44px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px; margin-bottom: 14px; font-weight: 700;
+  }
+  .card h3 { margin-bottom: 6px; }
+  .card p { font-size: 15px; margin: 0; color: var(--muted); }
+
+  .card.accent { background: linear-gradient(160deg, rgba(77,171,247,0.12), rgba(77,171,247,0.02)); border-color: rgba(77,171,247,0.3); }
+  .card.purple { background: linear-gradient(160deg, rgba(177,151,252,0.12), rgba(177,151,252,0.02)); border-color: rgba(177,151,252,0.3); }
+  .card.green  { background: linear-gradient(160deg, rgba(81,207,102,0.12), rgba(81,207,102,0.02)); border-color: rgba(81,207,102,0.3); }
+  .card.orange { background: linear-gradient(160deg, rgba(255,146,43,0.12), rgba(255,146,43,0.02)); border-color: rgba(255,146,43,0.3); }
+  .card.teal   { background: linear-gradient(160deg, rgba(32,201,151,0.12), rgba(32,201,151,0.02)); border-color: rgba(32,201,151,0.3); }
+
+  .icon.accent { background: rgba(77,171,247,0.15); color: var(--accent); }
+  .icon.purple { background: rgba(177,151,252,0.15); color: var(--accent-2); }
+  .icon.green  { background: rgba(81,207,102,0.15); color: var(--green); }
+  .icon.orange { background: rgba(255,146,43,0.15); color: var(--orange); }
+  .icon.teal   { background: rgba(32,201,151,0.15); color: var(--teal); }
+  .icon.pink   { background: rgba(240,101,149,0.15); color: var(--pink); }
+  .icon.red    { background: rgba(255,107,107,0.15); color: var(--red); }
+  .icon.yellow { background: rgba(255,212,59,0.15); color: var(--yellow); }
+
+  /* big stat */
+  .stat {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 14px;
+    padding: 24px; display: flex; flex-direction: column; gap: 4px;
+  }
+  .stat .num { font-size: 48px; font-weight: 700; color: var(--accent); letter-spacing: -0.02em; line-height: 1; }
+  .stat .num.purple { color: var(--accent-2); }
+  .stat .num.green { color: var(--green); }
+  .stat .num.orange { color: var(--orange); }
+  .stat .num.teal { color: var(--teal); }
+  .stat .label { font-size: 14px; color: var(--muted); margin-top: 6px; }
+
+  /* callout */
+  .callout {
+    border-radius: 14px; padding: 22px 26px; border-left: 4px solid var(--accent);
+    background: linear-gradient(90deg, rgba(77,171,247,0.12), rgba(77,171,247,0.02));
+    display: flex; gap: 18px; align-items: flex-start;
+  }
+  .callout .ic { font-size: 28px; line-height: 1; }
+  .callout .body { flex: 1; }
+  .callout .title { font-size: 16px; font-weight: 600; color: #f4f6fb; margin-bottom: 4px; }
+  .callout .text { color: var(--soft); font-size: 15px; line-height: 1.5; }
+
+  .callout.warn { background: linear-gradient(90deg, rgba(255,212,59,0.12), rgba(255,212,59,0.02)); border-left-color: var(--yellow); }
+  .callout.danger { background: linear-gradient(90deg, rgba(255,107,107,0.12), rgba(255,107,107,0.02)); border-left-color: var(--red); }
+  .callout.good { background: linear-gradient(90deg, rgba(81,207,102,0.12), rgba(81,207,102,0.02)); border-left-color: var(--green); }
+  .callout.purple { background: linear-gradient(90deg, rgba(177,151,252,0.12), rgba(177,151,252,0.02)); border-left-color: var(--accent-2); }
+
+  /* flow */
+  .flow-row { display: flex; align-items: stretch; gap: 12px; margin: 24px 0; }
+  .flow-step {
+    flex: 1; background: var(--panel); border: 1px solid var(--border); border-radius: 12px;
+    padding: 18px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 8px;
+    position: relative;
+  }
+  .flow-step .num { font-size: 11px; color: var(--muted); font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; }
+  .flow-step .ic { font-size: 32px; line-height: 1; margin: 4px 0; }
+  .flow-step .ttl { font-size: 15px; font-weight: 600; color: #f4f6fb; }
+  .flow-step .sub { font-size: 13px; color: var(--muted); line-height: 1.4; }
+  .flow-arrow {
+    display: flex; align-items: center; color: var(--muted); font-size: 24px; user-select: none;
+  }
+
+  /* funnel */
+  .funnel { display: flex; flex-direction: column; align-items: center; gap: 10px; margin: 16px 0; }
+  .funnel-row {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
+    padding: 14px 24px; display: flex; align-items: center; justify-content: space-between;
+    transition: 0.2s;
+  }
+  .funnel-row .lhs { font-weight: 600; color: #f4f6fb; }
+  .funnel-row .rhs { color: var(--muted); font-size: 14px; }
+  .funnel-row.l1 { width: 100%; }
+  .funnel-row.l2 { width: 80%; border-color: rgba(77,171,247,0.3); }
+  .funnel-row.l3 { width: 62%; border-color: rgba(177,151,252,0.3); }
+  .funnel-row.l4 { width: 46%; border-color: rgba(32,201,151,0.3); }
+  .funnel-row.l5 { width: 32%; border-color: rgba(81,207,102,0.4); background: rgba(81,207,102,0.05); }
+
+  /* decision split */
+  .split { display: grid; grid-template-columns: 1fr 60px 1fr; gap: 16px; align-items: stretch; margin: 14px 0; }
+  .split .or {
+    display: flex; align-items: center; justify-content: center;
+    color: var(--muted); font-weight: 700; font-size: 18px;
+  }
+
+  /* tag */
+  .tag {
+    display: inline-block; background: var(--panel-2); color: var(--accent); padding: 3px 10px;
+    border-radius: 999px; font-size: 13px; font-weight: 600; border: 1px solid var(--border);
+    font-family: var(--mono);
+  }
+  .tag.green { color: var(--green); }
+  .tag.red   { color: var(--red); background: rgba(255,107,107,0.08); border-color: rgba(255,107,107,0.3); }
+  .tag.purple { color: var(--accent-2); }
+
+  /* list */
+  .list { list-style: none; padding: 0; margin: 0; }
+  .list li {
+    display: flex; align-items: flex-start; gap: 12px; padding: 10px 0;
+    border-bottom: 1px solid var(--border); font-size: 16px; color: var(--soft);
+  }
+  .list li:last-child { border-bottom: 0; }
+  .list li .bullet {
+    width: 24px; height: 24px; border-radius: 6px; display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; font-size: 13px; font-weight: 700;
+  }
+  .list li .bullet.ok  { background: rgba(81,207,102,0.15); color: var(--green); }
+  .list li .bullet.no  { background: rgba(255,107,107,0.15); color: var(--red); }
+  .list li .bullet.num { background: var(--panel-2); color: var(--accent); }
+
+  /* code teaser */
+  .code-teaser {
+    background: #060912; border: 1px solid var(--border); border-radius: 10px;
+    padding: 14px 18px; font-family: var(--mono); font-size: 13px; color: #cdd5e6;
+    overflow-x: auto; white-space: nowrap;
+  }
+  .code-teaser .k { color: #ff9580; }
+  .code-teaser .f { color: var(--accent); }
+  .code-teaser .v { color: var(--green); font-weight: 600; }
+  .code-teaser .s { color: var(--accent-2); }
+
+  /* hint */
+  .hint {
+    position: fixed; bottom: 24px; right: 24px; color: var(--muted); font-size: 12px;
+    background: var(--panel); border: 1px solid var(--border); padding: 6px 12px; border-radius: 6px;
+  }
+
+  /* title slide */
+  .title-slide { text-align: left; }
+  .title-slide h1 { font-size: 72px; }
+  .title-slide .sub { color: var(--muted); font-size: 20px; max-width: 700px; }
+
+  /* section divider */
+  .section-slide {
+    text-align: center; align-items: center; justify-content: center;
+    background: radial-gradient(circle at center, rgba(77,171,247,0.08), transparent 60%);
+  }
+  .section-slide.purple { background: radial-gradient(circle at center, rgba(177,151,252,0.08), transparent 60%); }
+  .section-slide .big-num {
+    font-size: 100px; font-weight: 800; line-height: 1; color: var(--accent);
+    opacity: 0.5; letter-spacing: -0.04em;
+  }
+  .section-slide.purple .big-num { color: var(--accent-2); }
+  .section-slide h1 { font-size: 64px; margin-top: 8px; }
+  .section-slide p { font-size: 22px; max-width: 700px; margin: 12px auto 0; }
+</style>
+</head>
+<body>
+
+<div class="progress" id="progress"></div>
+
+<div class="deck" id="deck">
+
+<!-- SLIDE 1: TITLE -->
+<section class="slide title-slide active">
+  <div class="eyebrow">EMGuidance Refresh API</div>
+  <h1>How users<br/>discover content</h1>
+  <p class="sub">Two systems work together to put the right content in front of the right healthcare professional, every time they open the app.</p>
+</section>
+
+<!-- SLIDE 2: AT A GLANCE -->
+<section class="slide">
+  <div class="eyebrow">At a glance</div>
+  <h2>Two systems, one goal</h2>
+  <div class="grid grid-2" style="margin-top: 20px;">
+    <div class="card accent">
+      <div class="icon accent">📰</div>
+      <h3>Personalized Feed</h3>
+      <p>When a user opens the app, the API builds a tailored content feed in real time — blending sponsored campaigns, recommendations, and pinned items.</p>
+    </div>
+    <div class="card purple">
+      <div class="icon purple">🔄</div>
+      <h3>User Sync</h3>
+      <p>Every 2 minutes, a background job mirrors any user who changed or opened the app into our fast recommendation store. This is how the feed knows who they are.</p>
+    </div>
+  </div>
+  <div class="grid grid-4" style="margin-top: 22px;">
+    <div class="stat"><div class="num">2&nbsp;min</div><div class="label">User sync cadence</div></div>
+    <div class="stat"><div class="num purple">Real-time</div><div class="label">Feed generation</div></div>
+    <div class="stat"><div class="num green">Region-scoped</div><div class="label">Content isolation</div></div>
+    <div class="stat"><div class="num orange">Multi-instance</div><div class="label">Safe at scale</div></div>
+  </div>
+</section>
+
+<!-- SLIDE 3: SECTION 1 -->
+<section class="slide section-slide">
+  <div class="big-num">01</div>
+  <div class="eyebrow">Part one</div>
+  <h1>Personalized<br/>Content Delivery</h1>
+  <p>What happens when a user pulls down to refresh their feed</p>
+</section>
+
+<!-- SLIDE 4: THE FEED REQUEST -->
+<section class="slide">
+  <div class="eyebrow">The feed request</div>
+  <h2>From tap to tailored feed</h2>
+  <p class="lead">A single API call kicks off two engines in parallel, then merges and ranks the results.</p>
+
+  <div class="flow-row">
+    <div class="flow-step">
+      <div class="num">Step 1</div>
+      <div class="ic">📱</div>
+      <div class="ttl">User opens app</div>
+      <div class="sub">Feed refresh fires a request to the API</div>
+    </div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step">
+      <div class="num">Step 2</div>
+      <div class="ic">⚡</div>
+      <div class="ttl">Two engines run<br/>in parallel</div>
+      <div class="sub">Campaigner + Personalizer</div>
+    </div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step">
+      <div class="num">Step 3</div>
+      <div class="ic">🎯</div>
+      <div class="ttl">Merge &amp; rank</div>
+      <div class="sub">Combine scores, reorder, cap to limit</div>
+    </div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step">
+      <div class="num">Step 4</div>
+      <div class="ic">✨</div>
+      <div class="ttl">Personalized feed<br/>delivered</div>
+      <div class="sub">Cached for the user's next request</div>
+    </div>
+  </div>
+
+  <div class="callout purple" style="margin-top: 24px;">
+    <div class="ic">💡</div>
+    <div class="body">
+      <div class="title">Why two engines?</div>
+      <div class="text">The <strong>Campaigner</strong> handles paid placements and audience-targeted promotions. The <strong>Personalizer</strong> handles recommendations based on the user's profile, history, and trending content. Running both in parallel keeps the feed fast and balanced.</div>
+    </div>
+  </div>
+</section>
+
+<!-- SLIDE 5: STICKY CONTENT -->
+<section class="slide">
+  <div class="eyebrow orange">Pinned promotion</div>
+  <h2>What is "sticky" content?</h2>
+  <p class="lead">A small, special category of content the business wants to keep promoting — even after a user has already engaged with it.</p>
+
+  <div class="grid grid-2" style="margin-top: 24px;">
+    <div class="card">
+      <div class="icon accent">📌</div>
+      <h3>Regular top-spot content</h3>
+      <p style="margin-top: 8px;">Promoted at the top of the feed, but once the user clicks it, it stops appearing. Good for one-time announcements.</p>
+    </div>
+    <div class="card orange">
+      <div class="icon orange">🔁</div>
+      <h3>Sticky top-spot content</h3>
+      <p style="margin-top: 8px;"><strong>Keeps appearing</strong> at the top of the feed even after the user has clicked, liked, or shared it. Good for ongoing campaigns and high-priority pinned items.</p>
+    </div>
+  </div>
+
+  <div class="callout good" style="margin-top: 24px;">
+    <div class="ic">✅</div>
+    <div class="body">
+      <div class="title">Business value</div>
+      <div class="text">Sticky content gives the marketing and partnerships team a guaranteed surface for messages that need sustained visibility — without depending on user behaviour to keep them in view.</div>
+    </div>
+  </div>
+</section>
+
+<!-- SLIDE 6: GUARDRAILS -->
+<section class="slide">
+  <div class="eyebrow teal">Safeguards</div>
+  <h2>What protects the user experience</h2>
+  <p class="lead">Even sticky content has to earn its place. Six guardrails run on every piece of content before it can appear.</p>
+
+  <div class="grid grid-3" style="margin-top: 22px;">
+    <div class="card">
+      <div class="icon green">🌍</div>
+      <h3>Region match</h3>
+      <p>Content only shows in the region it was published for.</p>
+    </div>
+    <div class="card">
+      <div class="icon accent">👩‍⚕️</div>
+      <h3>Role &amp; speciality</h3>
+      <p>Cardiology content stays with cardiologists. Same for speciality, work-site, etc.</p>
+    </div>
+    <div class="card">
+      <div class="icon purple">🎫</div>
+      <h3>Audience segment</h3>
+      <p>Campaign content checks the user is in the target audience the campaign was built for.</p>
+    </div>
+    <div class="card">
+      <div class="icon orange">⏰</div>
+      <h3>Expiry</h3>
+      <p>Content past its expiry date is removed automatically.</p>
+    </div>
+    <div class="card">
+      <div class="icon yellow">💰</div>
+      <h3>Sponsored consent</h3>
+      <p>Users who opted out of sponsored content never see it.</p>
+    </div>
+    <div class="card">
+      <div class="icon teal">📊</div>
+      <h3>Per-type caps</h3>
+      <p>Caps on how many of each content type can appear in one feed.</p>
+    </div>
+  </div>
+</section>
+
+<!-- SLIDE 7: THE FUNNEL -->
+<section class="slide">
+  <div class="eyebrow">From catalogue to feed</div>
+  <h2>The eligibility funnel</h2>
+  <p class="lead">A single piece of sticky content passes through five gates before it lands in front of a user.</p>
+
+  <div class="funnel" style="margin-top: 30px;">
+    <div class="funnel-row l1">
+      <span class="lhs">All sticky-tagged content in the catalogue</span>
+      <span class="rhs">Starting set</span>
+    </div>
+    <div class="funnel-row l2">
+      <span class="lhs">Same region as the user</span>
+      <span class="rhs">Geographic match</span>
+    </div>
+    <div class="funnel-row l3">
+      <span class="lhs">Matches the user's role &amp; speciality</span>
+      <span class="rhs">Professional fit</span>
+    </div>
+    <div class="funnel-row l4">
+      <span class="lhs">Not expired, sponsored-consent honoured</span>
+      <span class="rhs">Policy checks</span>
+    </div>
+    <div class="funnel-row l5">
+      <span class="lhs">User is in the campaign's audience</span>
+      <span class="rhs">Final feed</span>
+    </div>
+  </div>
+
+  <div class="callout" style="margin-top: 28px;">
+    <div class="ic">⚙️</div>
+    <div class="body">
+      <div class="title">Under the hood</div>
+      <div class="text">The first four gates are answered in a single fast lookup against our search index. The last gate runs in-process. Typical end-to-end response time is sub-second.</div>
+    </div>
+  </div>
+
+  <details style="margin-top: 20px;">
+    <summary style="color: var(--muted); cursor: pointer; font-size: 13px;">Show the technical lookup (for engineers)</summary>
+    <div class="code-teaser" style="margin-top: 10px;">
+      <span class="k">FT.SEARCH</span> idx:content <span class="s">"(@region:{ ZA }) &amp; (@campaigningTags:{ PERSONALIZER_TOP_SPOT_STICKY })"</span> LIMIT 0 10 WITHSCORES
+    </div>
+  </details>
+</section>
+
+<!-- SLIDE 8: SECTION 2 -->
+<section class="slide section-slide purple">
+  <div class="big-num">02</div>
+  <div class="eyebrow purple">Part two</div>
+  <h1>Keeping User<br/>Profiles Fresh</h1>
+  <p>How users get into the recommendation system in the first place</p>
+</section>
+
+<!-- SLIDE 9: THE 2-MINUTE CRON -->
+<section class="slide">
+  <div class="eyebrow purple">The user-sync job</div>
+  <h2>Every 2 minutes, the system asks:<br/><span style="color: var(--accent-2)">"who changed?"</span></h2>
+  <p class="lead">A background job runs on a clock. It picks up users who edited their profile or opened the app, and refreshes their record in the recommendation store.</p>
+
+  <div class="grid grid-4" style="margin-top: 28px;">
+    <div class="stat"><div class="num purple">2 min</div><div class="label">How often it runs</div></div>
+    <div class="stat"><div class="num">0-59 s</div><div class="label">Random jitter to avoid spikes</div></div>
+    <div class="stat"><div class="num green">Multi-instance</div><div class="label">Safe across servers</div></div>
+    <div class="stat"><div class="num orange">2 signals</div><div class="label">Profile edit OR app open</div></div>
+  </div>
+
+  <div class="callout purple" style="margin-top: 26px;">
+    <div class="ic">🔒</div>
+    <div class="body">
+      <div class="title">Safe at scale</div>
+      <div class="text">Multiple copies of the API run in production. A shared timestamp ensures only <strong>one</strong> instance does the work each tick — the others see "already done" and skip. No duplicate effort, no race conditions.</div>
+    </div>
+  </div>
+</section>
+
+<!-- SLIDE 10: WHO GETS INDEXED -->
+<section class="slide">
+  <div class="eyebrow">Who makes the cut</div>
+  <h2>Two paths to being indexed</h2>
+  <p class="lead">A user record is only added to the recommendation store if it meets one of two criteria.</p>
+
+  <div class="split" style="margin-top: 28px;">
+    <div class="card green">
+      <div class="icon green">👤</div>
+      <h3>Path A — Real users</h3>
+      <ul class="list" style="margin-top: 10px;">
+        <li><span class="bullet ok">✓</span><span>Account status is <span class="tag green">accepted</span>, <span class="tag green">pending</span>, or <span class="tag green">on hold</span></span></li>
+        <li><span class="bullet ok">✓</span><span>Has a valid email</span></li>
+        <li><span class="bullet ok">✓</span><span>Has a user ID</span></li>
+        <li><span class="bullet ok">✓</span><span>Has a country set</span></li>
+      </ul>
+    </div>
+    <div class="or">OR</div>
+    <div class="card accent">
+      <div class="icon accent">👻</div>
+      <h3>Path B — Ghost profiles</h3>
+      <ul class="list" style="margin-top: 10px;">
+        <li><span class="bullet ok">✓</span><span>Marked as a "ghost" profile</span></li>
+        <li><span class="bullet ok">✓</span><span>Has a valid email</span></li>
+      </ul>
+      <p style="margin-top: 14px; font-size: 14px; color: var(--muted);">Ghost profiles are synthetic records — usually practitioners pulled from a public directory who haven't signed up yet.</p>
+    </div>
+  </div>
+
+  <div class="callout danger" style="margin-top: 24px;">
+    <div class="ic">🚫</div>
+    <div class="body">
+      <div class="title">Who's excluded</div>
+      <div class="text">Users in <span class="tag red">rejected</span> or <span class="tag red">blocked</span> state, and anyone missing email, user ID, or country. The same job <strong>also evicts</strong> users who lose eligibility — newly rejected accounts are purged at the next tick.</div>
+    </div>
+  </div>
+</section>
+
+<!-- SLIDE 11: AUTO-EXCLUSIONS -->
+<section class="slide">
+  <div class="eyebrow teal">A useful side-effect</div>
+  <h2>"Don't show me what I've already done"</h2>
+  <p class="lead">While the sync job is updating user records, it also remembers what the user has completed — so the recommendation engine stops promoting it.</p>
+
+  <div class="grid grid-2" style="margin-top: 24px;">
+    <div class="card teal">
+      <div class="icon teal">🎓</div>
+      <h3>Completed CPDs</h3>
+      <p>Once a user finishes a CPD, it's flagged as "done" and removed from future personalized recommendations.</p>
+    </div>
+    <div class="card teal">
+      <div class="icon teal">📚</div>
+      <h3>Completed academy courses</h3>
+      <p>Same treatment for finished academy courses — the user moves on, the recommendations move on with them.</p>
+    </div>
+  </div>
+
+  <div class="callout good" style="margin-top: 24px;">
+    <div class="ic">👍</div>
+    <div class="body">
+      <div class="title">Why this matters</div>
+      <div class="text">Without this, users would keep seeing CPDs they already passed and courses they already completed — wasting feed space and feeling like the system doesn't know them. This is a quiet but important UX win.</div>
+    </div>
+  </div>
+</section>
+
+<!-- SLIDE 12: THINGS TO KNOW -->
+<section class="slide">
+  <div class="eyebrow yellow">Worth flagging</div>
+  <h2>Three things to be aware of</h2>
+
+  <div class="grid" style="grid-template-columns: 1fr; gap: 16px; margin-top: 24px;">
+    <div class="callout warn">
+      <div class="ic">📈</div>
+      <div class="body">
+        <div class="title">The "completed" list only grows</div>
+        <div class="text">Once a CPD or course is marked done for a user, it stays on their exclusion list forever. There's no built-in re-engagement mechanism if we ever want to re-promote a re-certification or refresher.</div>
+      </div>
+    </div>
+
+    <div class="callout warn">
+      <div class="ic">🗄️</div>
+      <div class="body">
+        <div class="title">Two database reads every 2 minutes per server</div>
+        <div class="text">Each app instance issues two Firestore queries on every tick before the de-dupe check applies. At today's scale this is fine; worth revisiting if we grow horizontally.</div>
+      </div>
+    </div>
+
+    <div class="callout warn">
+      <div class="ic">🤐</div>
+      <div class="body">
+        <div class="title">Quiet error handling on exclusions</div>
+        <div class="text">If the system fails to record a "completed CPD" exclusion, the error is silently dropped. Low impact (the user just sees content they've finished) but worth knowing — and easy to fix.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SLIDE 13: SUMMARY -->
+<section class="slide">
+  <div class="eyebrow">In summary</div>
+  <h2>What we built, what we get</h2>
+
+  <div class="grid grid-2" style="margin-top: 24px;">
+    <div class="card accent">
+      <h3 style="color: var(--accent);">Personalized Feed</h3>
+      <ul class="list" style="margin-top: 8px;">
+        <li><span class="bullet num">1</span><span>Two engines blend campaigns + personalization</span></li>
+        <li><span class="bullet num">2</span><span>Six guardrails keep content relevant &amp; safe</span></li>
+        <li><span class="bullet num">3</span><span>"Sticky" lever for sustained-visibility promotions</span></li>
+        <li><span class="bullet num">4</span><span>Cached per request for speed</span></li>
+      </ul>
+    </div>
+    <div class="card purple">
+      <h3 style="color: var(--accent-2);">User Sync</h3>
+      <ul class="list" style="margin-top: 8px;">
+        <li><span class="bullet num">1</span><span>Refreshes any changed/active user every 2 min</span></li>
+        <li><span class="bullet num">2</span><span>Strict eligibility — only valid, approved users</span></li>
+        <li><span class="bullet num">3</span><span>Self-cleans: removes users who lose eligibility</span></li>
+        <li><span class="bullet num">4</span><span>Auto-excludes already-completed CPDs &amp; courses</span></li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="callout" style="margin-top: 30px;">
+    <div class="ic">🎯</div>
+    <div class="body">
+      <div class="title">The net effect</div>
+      <div class="text">A healthcare professional opening the EMGuidance app gets a feed that knows their role, respects their preferences, surfaces business-priority content, and doesn't waste their time with what they've already seen — within ~2 minutes of any profile change.</div>
+    </div>
+  </div>
+</section>
+
+</div>
+
+<div class="nav">
+  <button id="prev" title="Previous (←)">◀</button>
+  <span class="counter" id="counter">1 / 13</span>
+  <button id="next" title="Next (→)">▶</button>
+</div>
+
+<div class="hint">← → to navigate · F for fullscreen</div>
+
+<script>
+  const slides = document.querySelectorAll(".slide");
+  const counter = document.getElementById("counter");
+  const progress = document.getElementById("progress");
+  let i = 0;
+
+  function show(n) {
+    i = Math.max(0, Math.min(slides.length - 1, n));
+    slides.forEach((s, idx) => s.classList.toggle("active", idx === i));
+    counter.textContent = `${i + 1} / ${slides.length}`;
+    progress.style.width = `${((i + 1) / slides.length) * 100}%`;
+  }
+
+  document.getElementById("prev").onclick = () => show(i - 1);
+  document.getElementById("next").onclick = () => show(i + 1);
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "ArrowRight" || e.key === " " || e.key === "PageDown") { e.preventDefault(); show(i + 1); }
+    if (e.key === "ArrowLeft" || e.key === "PageUp") { e.preventDefault(); show(i - 1); }
+    if (e.key === "Home") show(0);
+    if (e.key === "End") show(slides.length - 1);
+    if (e.key === "f" || e.key === "F") {
+      if (!document.fullscreenElement) document.documentElement.requestFullscreen();
+      else document.exitFullscreen();
+    }
+  });
+
+  show(0);
+</script>
+
+</body>
+</html>
