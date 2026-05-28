@@ -598,11 +598,28 @@
   </div>
 </section>
 
+<!-- SLIDE 14: INDEXING LIMITATION -->
+<section class="slide">
+  <div class="eyebrow orange">Known limitation</div>
+  <h2>When users are added to the Redis index</h2>
+  <p class="lead">A user is only added to the Redis index after a profile update or a mobile app login event.</p>
+
+  <div class="grid" style="grid-template-columns: 1fr; gap: 16px; margin-top: 24px;">
+    <div class="callout warn">
+      <div class="ic">⚠️</div>
+      <div class="body">
+        <div class="title">Trigger requirement</div>
+        <div class="text">Users are indexed only when their profile has been updated, or when <span class="tag">lastLaunch</span> is updated.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
 </div>
 
 <div class="nav">
   <button id="prev" title="Previous (←)">◀</button>
-  <span class="counter" id="counter">1 / 13</span>
+  <span class="counter" id="counter">1 / 14</span>
   <button id="next" title="Next (→)">▶</button>
 </div>
 
