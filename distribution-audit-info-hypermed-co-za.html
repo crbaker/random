@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Distribution Audit — info@hypermed.co.za</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+  :root {
+    --bg: #0f172a; --panel: #1e293b; --panel2: #273449;
+    --text: #e2e8f0; --muted: #94a3b8; --accent: #38bdf8; --accent2: #a78bfa;
+    --good: #34d399; --warn: #fbbf24; --bad: #f87171;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: linear-gradient(160deg, #0b1220, #0f172a 40%, #131c31);
+    color: var(--text); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    padding: 32px; min-height: 100vh;
+  }
+  header { max-width: 1200px; margin: 0 auto 28px; }
+  .eyebrow { color: var(--accent); letter-spacing: .18em; text-transform: uppercase; font-size: 12px; font-weight: 700; }
+  h1 { margin: 6px 0 4px; font-size: 30px; }
+  h1 .email { color: var(--accent2); }
+  .sub { color: var(--muted); font-size: 14px; }
+  .wrap { max-width: 1200px; margin: 0 auto; }
+  .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 24px; }
+  .kpi { background: var(--panel); border: 1px solid #334155; border-radius: 14px; padding: 18px 20px; }
+  .kpi .label { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .08em; }
+  .kpi .value { font-size: 30px; font-weight: 800; margin-top: 6px; }
+  .kpi .value.accent { color: var(--accent); }
+  .kpi .value.warn { color: var(--warn); }
+  .banner {
+    background: linear-gradient(90deg, rgba(167,139,250,.18), rgba(56,189,248,.12));
+    border: 1px solid #3b4a63; border-radius: 14px; padding: 16px 20px; margin-bottom: 24px; font-size: 15px;
+  }
+  .banner b { color: var(--accent2); }
+  .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
+  .grid.thirds { grid-template-columns: repeat(3, 1fr); }
+  .card { background: var(--panel); border: 1px solid #334155; border-radius: 16px; padding: 20px; }
+  .card h2 { margin: 0 0 4px; font-size: 16px; }
+  .card .hint { color: var(--muted); font-size: 12px; margin-bottom: 12px; }
+  .chart-box { position: relative; height: 300px; }
+  .chart-box.tall { height: 380px; }
+  .span-2 { grid-column: span 2; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid #334155; }
+  th { color: var(--muted); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: .06em; }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+  .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+  .table-scroll { max-height: 380px; overflow-y: auto; }
+  footer { max-width: 1200px; margin: 28px auto 0; color: var(--muted); font-size: 12px; text-align: center; }
+  @media (max-width: 860px) { .grid, .grid.thirds { grid-template-columns: 1fr; } .span-2 { grid-column: auto; } }
+</style>
+</head>
+<body>
+<header>
+  <div class="eyebrow">Script Distribution Audit</div>
+  <h1>Distributions to <span class="email">info@hypermed.co.za</span></h1>
+  <div class="sub">Generated 2026-08-03 16:53:27 UTC · Date range 2023-06-06 → 2026-08-03</div>
+</header>
+
+<div class="wrap">
+  <div class="kpis">
+    <div class="kpi"><div class="label">Total distributions</div><div class="value accent">727</div></div>
+    <div class="kpi"><div class="label">Unique scripts</div><div class="value">625</div></div>
+    <div class="kpi"><div class="label">Unique patients</div><div class="value">313</div></div>
+    <div class="kpi"><div class="label">Avg sends / script</div><div class="value warn">1.16</div></div>
+    <div class="kpi"><div class="label">Peak day</div><div class="value">8</div><div class="sub">2026-03-25</div></div>
+  </div>
+
+  <div class="banner">
+    <b>Context split:</b> 726 PHARMACY · 1 PATIENT &nbsp;—&nbsp; the <b>context</b> field records whether each script was sent to the <b>PATIENT</b> or a <b>PHARMACY</b>.
+  </div>
+
+  <div class="grid">
+    <div class="card">
+      <h2>Distributions by context</h2>
+      <div class="hint">PATIENT vs PHARMACY — the headline breakdown</div>
+      <div class="chart-box"><canvas id="contextChart"></canvas></div>
+    </div>
+    <div class="card">
+      <h2>Context × delivery method</h2>
+      <div class="hint">How each context was actually delivered</div>
+      <div class="chart-box"><canvas id="contextMethodChart"></canvas></div>
+    </div>
+
+    <div class="card">
+      <h2>Delivery method</h2>
+      <div class="hint">EMAIL · SMS · INTEGRATION · WHATSAPP</div>
+      <div class="chart-box"><canvas id="methodChart"></canvas></div>
+    </div>
+    <div class="card">
+      <h2>Script state</h2>
+      <div class="hint">State of the parent script when sent</div>
+      <div class="chart-box"><canvas id="stateChart"></canvas></div>
+    </div>
+
+    <div class="card span-2">
+      <h2>Distributions over time</h2>
+      <div class="hint">Monthly volume — spot the spike</div>
+      <div class="chart-box"><canvas id="monthChart"></canvas></div>
+    </div>
+
+    <div class="card span-2">
+      <h2>Busiest days (top 15)</h2>
+      <div class="chart-box tall"><canvas id="daysChart"></canvas></div>
+    </div>
+
+    <div class="card">
+      <h2>Top prescribers (top 15)</h2>
+      <div class="chart-box tall"><canvas id="prescriberChart"></canvas></div>
+    </div>
+    <div class="card">
+      <h2>Top practices (top 15)</h2>
+      <div class="chart-box tall"><canvas id="practiceChart"></canvas></div>
+    </div>
+
+    <div class="card">
+      <h2>Pharmacies (top 15)</h2>
+      <div class="hint">Named pharmacy on the distribution</div>
+      <div class="chart-box tall"><canvas id="pharmacyChart"></canvas></div>
+    </div>
+    <div class="card">
+      <h2>Pharmacies — PHARMACY context (top 15)</h2>
+      <div class="hint">Only PHARMACY-context sends</div>
+      <div class="chart-box tall"><canvas id="pharmacyCtxChart"></canvas></div>
+    </div>
+
+    <div class="card span-2">
+      <h2>Pharmacy practice number (top 15)</h2>
+      <div class="hint">pharmacy.practiceNo on the distribution — 2 distinct value(s)</div>
+      <div class="chart-box tall"><canvas id="pharmacyPracticeNoChart"></canvas></div>
+    </div>
+
+    <div class="card span-2">
+      <h2>Scripts sent here more than once</h2>
+      <div class="hint">84 scripts repeated — likely driver of the unusual volume (showing up to 50)</div>
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th>Script ID</th><th class="num">Times sent</th></tr></thead>
+          <tbody><tr><td class="mono">TXIMCFEB</td><td class="num">8</td></tr><tr><td class="mono">IABGVWZY</td><td class="num">6</td></tr><tr><td class="mono">TNLZGTUN</td><td class="num">4</td></tr><tr><td class="mono">MDEXVEJB</td><td class="num">3</td></tr><tr><td class="mono">OIXJPXZT</td><td class="num">3</td></tr><tr><td class="mono">PSVVPJUE</td><td class="num">3</td></tr><tr><td class="mono">LKIDQYPE</td><td class="num">3</td></tr><tr><td class="mono">AIKOREKO</td><td class="num">3</td></tr><tr><td class="mono">GTNEPSSQ</td><td class="num">3</td></tr><tr><td class="mono">LJVWMYSO</td><td class="num">2</td></tr><tr><td class="mono">SGUOZCPP</td><td class="num">2</td></tr><tr><td class="mono">GCNSSAOO</td><td class="num">2</td></tr><tr><td class="mono">DRTOUKUI</td><td class="num">2</td></tr><tr><td class="mono">RTQFVRPG</td><td class="num">2</td></tr><tr><td class="mono">CGZKHGRC</td><td class="num">2</td></tr><tr><td class="mono">DRFNIQFC</td><td class="num">2</td></tr><tr><td class="mono">EKRLYCTW</td><td class="num">2</td></tr><tr><td class="mono">FNRIWTFC</td><td class="num">2</td></tr><tr><td class="mono">GQXJPTVW</td><td class="num">2</td></tr><tr><td class="mono">OYCMTBEY</td><td class="num">2</td></tr><tr><td class="mono">PSAXLAWY</td><td class="num">2</td></tr><tr><td class="mono">SJQTODGG</td><td class="num">2</td></tr><tr><td class="mono">DNNDUVBQ</td><td class="num">2</td></tr><tr><td class="mono">ICTUAUDZ</td><td class="num">2</td></tr><tr><td class="mono">SWFVHBPK</td><td class="num">2</td></tr><tr><td class="mono">IYWGIDYN</td><td class="num">2</td></tr><tr><td class="mono">UBYPTDUW</td><td class="num">2</td></tr><tr><td class="mono">OWINGXFB</td><td class="num">2</td></tr><tr><td class="mono">URLGGMTW</td><td class="num">2</td></tr><tr><td class="mono">WHZOBBIC</td><td class="num">2</td></tr><tr><td class="mono">ZENZIFVV</td><td class="num">2</td></tr><tr><td class="mono">XEGGIOUM</td><td class="num">2</td></tr><tr><td class="mono">HQSWDGEZ</td><td class="num">2</td></tr><tr><td class="mono">KOSTZSKI</td><td class="num">2</td></tr><tr><td class="mono">EQUGRNEI</td><td class="num">2</td></tr><tr><td class="mono">TPACJRPN</td><td class="num">2</td></tr><tr><td class="mono">BQNKIPIG</td><td class="num">2</td></tr><tr><td class="mono">MHIMNFPE</td><td class="num">2</td></tr><tr><td class="mono">NPGSCXXT</td><td class="num">2</td></tr><tr><td class="mono">QLMJIYAN</td><td class="num">2</td></tr><tr><td class="mono">RUMXXVLN</td><td class="num">2</td></tr><tr><td class="mono">WVBNYGLZ</td><td class="num">2</td></tr><tr><td class="mono">XJLWNYCB</td><td class="num">2</td></tr><tr><td class="mono">YWFYGHIT</td><td class="num">2</td></tr><tr><td class="mono">LMWLSTFN</td><td class="num">2</td></tr><tr><td class="mono">DFOIMWPA</td><td class="num">2</td></tr><tr><td class="mono">IAFIYJJV</td><td class="num">2</td></tr><tr><td class="mono">IGCANBRG</td><td class="num">2</td></tr><tr><td class="mono">JEMRTKHE</td><td class="num">2</td></tr><tr><td class="mono">PZTTRWIK</td><td class="num">2</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>Read-only audit · no Firestore data was modified.</footer>
+
+<script>
+  const DATA = {"context":{"labels":["PHARMACY","PATIENT"],"values":[726,1],"truncated":0,"distinct":2},"method":{"labels":["EMAIL"],"values":[727],"truncated":0,"distinct":1},"contextByMethod":{"labels":["PHARMACY / EMAIL","PATIENT / EMAIL"],"values":[726,1],"truncated":0,"distinct":2},"state":{"labels":["SIGNED","CANCELLED"],"values":[681,46],"truncated":0,"distinct":2},"monthData":{"labels":["2023-06","2023-07","2023-08","2023-09","2023-10","2023-11","2023-12","2024-01","2024-02","2024-03","2024-04","2024-05","2024-06","2024-07","2024-08","2024-09","2024-10","2024-11","2024-12","2025-01","2025-02","2025-03","2025-04","2025-05","2025-06","2025-07","2025-08","2025-09","2025-10","2025-11","2025-12","2026-01","2026-02","2026-03","2026-04","2026-05","2026-06","2026-07","2026-08"],"values":[3,1,7,7,5,5,4,9,6,8,8,9,13,11,18,11,16,10,13,18,16,10,30,23,24,24,21,16,32,27,21,13,19,27,44,68,67,56,7]},"busiestDays":{"labels":["2026-03-25","2026-04-23","2025-11-11","2026-06-04","2026-07-08","2026-05-06","2025-04-28","2026-05-28","2026-02-04","2026-05-19","2026-05-11","2026-04-09","2025-01-20","2025-10-11","2025-04-09"],"values":[8,7,7,6,6,6,5,5,5,5,5,5,5,4,4],"truncated":402,"distinct":417},"prescriber":{"labels":["Dr. Marc Davidowitz","Dr. John Torline","Dr. Dina de Bruyn","John F Wulz","Candice Ivanna Jacobson","Dr Renata Schoeman","8507295047084","Dr. Belinda Derman","Zanda Jaquire","Petrus Jacobus Badenhorst","Akshar Vivek Sewrathan","Bhaskaran Charles","Helena Glaudina de Clercq","Kirsten Whitlock","Renata Schoeman"],"values":[51,43,40,34,31,31,28,24,22,18,17,17,15,14,13],"truncated":121,"distinct":136},"practice":{"labels":["Virtus Health and Medical","Le Roux Mental Healthcare","Dr Renata Schoeman Inc","Dr John Torline Psychiatrist Inc","Dr Dina de Bruyn","C Point Medical Practice","Dr Candice Jacobson","Whatsup Doc | OnlineDoctorSA.co.za","Dr Belinda Derman","Dr Zanda Jaquire Specialist Psychiatrist","Dr PJ Badenhorst","Dr BN Charles","Abrahams and Ismail Inc","Dr Claudia de Clercq Inc","Dr Michelle Vlok-Barnard"],"values":[58,49,44,43,40,37,31,28,24,22,18,17,16,15,12],"truncated":100,"distinct":115},"pharmacy":{"labels":["Hypermed Pharmacy","n/a"],"values":[713,14],"truncated":0,"distinct":2},"pharmacyCtx":{"labels":["Hypermed Pharmacy","unnamed pharmacy"],"values":[712,14],"truncated":0,"distinct":2},"pharmacyPracticeNo":{"labels":["3278","n/a"],"values":[713,14],"truncated":0,"distinct":2}};
+  const PALETTE = ["#38bdf8","#a78bfa","#34d399","#fbbf24","#f87171","#f472b6","#60a5fa","#4ade80","#fb923c","#22d3ee","#c084fc","#facc15"];
+  Chart.defaults.color = "#94a3b8";
+  Chart.defaults.borderColor = "rgba(148,163,184,0.15)";
+  Chart.defaults.font.family = "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
+
+  const doughnut = (id, d) => new Chart(document.getElementById(id), {
+    type: "doughnut",
+    data: { labels: d.labels, datasets: [{ data: d.values, backgroundColor: PALETTE, borderWidth: 0 }] },
+    options: { plugins: { legend: { position: "right" } }, cutout: "58%" },
+  });
+  const bar = (id, d, horizontal, color) => new Chart(document.getElementById(id), {
+    type: "bar",
+    data: { labels: d.labels, datasets: [{ data: d.values, backgroundColor: color || "#38bdf8", borderRadius: 6 }] },
+    options: {
+      indexAxis: horizontal ? "y" : "x",
+      plugins: { legend: { display: false } },
+      scales: { x: { grid: { display: !horizontal } }, y: { grid: { display: horizontal } } },
+    },
+  });
+  const line = (id, d) => new Chart(document.getElementById(id), {
+    type: "line",
+    data: { labels: d.labels, datasets: [{ data: d.values, borderColor: "#38bdf8", backgroundColor: "rgba(56,189,248,0.15)", fill: true, tension: 0.3, pointRadius: 3 }] },
+    options: { plugins: { legend: { display: false } } },
+  });
+
+  doughnut("contextChart", DATA.context);
+  bar("contextMethodChart", DATA.contextByMethod, true, "#a78bfa");
+  doughnut("methodChart", DATA.method);
+  doughnut("stateChart", DATA.state);
+  line("monthChart", DATA.monthData);
+  bar("daysChart", DATA.busiestDays, false, "#fbbf24");
+  bar("prescriberChart", DATA.prescriber, true, "#34d399");
+  bar("practiceChart", DATA.practice, true, "#60a5fa");
+  bar("pharmacyChart", DATA.pharmacy, true, "#f472b6");
+  bar("pharmacyCtxChart", DATA.pharmacyCtx, true, "#22d3ee");
+  bar("pharmacyPracticeNoChart", DATA.pharmacyPracticeNo, true, "#c084fc");
+</script>
+</body>
+</html>
