@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sponsored Search Boosting — Semaglutide Scenario</title>
+<style>
+  :root{
+    --bg:#0f1419; --panel:#1a222d; --panel2:#222c39; --line:#2f3d4d;
+    --ink:#e8eef4; --muted:#93a4b5; --accent:#4ea1ff; --gold:#f5b342;
+    --green:#3ecf8e; --pink:#ff6b9d; --purple:#a78bfa; --red:#ff6f6f;
+    --shadow:0 8px 30px rgba(0,0,0,.35);
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:radial-gradient(1200px 600px at 70% -10%,#16202c,#0f1419);
+    color:var(--ink); font:15px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:1040px; margin:0 auto; padding:40px 24px 80px}
+  header.hero{margin-bottom:34px}
+  .kicker{display:inline-block; font-size:12px; letter-spacing:.14em; text-transform:uppercase;
+    color:var(--accent); background:rgba(78,161,255,.1); border:1px solid rgba(78,161,255,.28);
+    padding:5px 12px; border-radius:999px; font-weight:600}
+  h1{font-size:32px; margin:16px 0 8px; letter-spacing:-.02em}
+  .sub{color:var(--muted); font-size:16px; max-width:680px}
+  .searchbar{margin-top:22px; display:flex; align-items:center; gap:12px; background:var(--panel);
+    border:1px solid var(--line); border-radius:12px; padding:14px 18px; max-width:420px; box-shadow:var(--shadow)}
+  .searchbar svg{flex:0 0 auto}
+  .searchbar .q{font-size:19px; font-weight:600}
+  .searchbar .lbl{font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:.1em}
+
+  section{margin-top:44px}
+  .step-head{display:flex; align-items:center; gap:14px; margin-bottom:8px}
+  .step-num{flex:0 0 auto; width:34px; height:34px; border-radius:50%; display:grid; place-items:center;
+    background:var(--accent); color:#04121f; font-weight:800; font-size:16px}
+  h2{font-size:21px; margin:0; letter-spacing:-.01em}
+  .step-desc{color:var(--muted); margin:2px 0 20px 48px; max-width:760px}
+
+  /* cards */
+  .cards{display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:14px}
+  .card{background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:16px;
+    position:relative; transition:.4s; box-shadow:var(--shadow)}
+  .card .name{font-weight:700; font-size:16px; margin-bottom:4px}
+  .card .meta{font-size:12px; color:var(--muted)}
+  .tag{display:inline-block; font-size:11px; font-weight:600; padding:3px 9px; border-radius:999px; margin:8px 6px 0 0}
+  .t-orig{background:rgba(245,179,66,.14); color:var(--gold); border:1px solid rgba(245,179,66,.35)}
+  .t-spon{background:rgba(167,139,250,.14); color:var(--purple); border:1px solid rgba(167,139,250,.35)}
+  .t-tag{background:rgba(255,107,157,.14); color:var(--pink); border:1px solid rgba(255,107,157,.35)}
+  .t-ingr{background:rgba(62,207,142,.13); color:var(--green); border:1px solid rgba(62,207,142,.32)}
+  .score{position:absolute; top:14px; right:14px; font-size:12px; color:var(--muted); font-variant-numeric:tabular-nums}
+
+  /* buckets */
+  .buckets{display:grid; grid-template-columns:repeat(4,1fr); gap:14px}
+  @media(max-width:820px){.buckets{grid-template-columns:repeat(2,1fr)}}
+  .bucket{background:var(--panel); border:1px dashed var(--line); border-radius:14px; padding:14px; min-height:150px}
+  .bucket h3{margin:0 0 4px; font-size:14px; display:flex; align-items:center; gap:8px}
+  .bucket .dot{width:9px; height:9px; border-radius:50%}
+  .bucket .desc{font-size:11.5px; color:var(--muted); margin-bottom:12px; min-height:44px}
+  .chip{background:var(--panel2); border:1px solid var(--line); border-radius:8px; padding:8px 10px;
+    font-size:13px; font-weight:600; margin-bottom:8px; opacity:0; transform:translateY(8px); transition:.45s}
+  .chip.show{opacity:1; transform:none}
+  .chip small{display:block; font-weight:400; color:var(--muted); font-size:11px}
+
+  .btn{background:var(--accent); color:#04121f; border:none; font-weight:700; font-size:14px;
+    padding:11px 20px; border-radius:10px; cursor:pointer; transition:.2s; box-shadow:var(--shadow)}
+  .btn:hover{filter:brightness(1.08); transform:translateY(-1px)}
+  .btn.ghost{background:transparent; color:var(--accent); border:1px solid var(--accent); box-shadow:none}
+  .btn:disabled{opacity:.4; cursor:not-allowed; transform:none}
+  .controls{display:flex; gap:12px; flex-wrap:wrap; margin-left:48px; margin-bottom:20px}
+
+  /* lottery */
+  .lottery{margin-left:48px}
+  .lot-grid{display:grid; grid-template-columns:1fr 1fr; gap:16px; max-width:640px}
+  @media(max-width:640px){.lot-grid{grid-template-columns:1fr}}
+  .cand{background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:18px; position:relative; transition:.3s}
+  .cand.winner{border-color:var(--gold); box-shadow:0 0 0 2px rgba(245,179,66,.4),var(--shadow)}
+  .cand .cname{font-size:18px; font-weight:800}
+  .cand .stat{display:flex; justify-content:space-between; font-size:13px; margin-top:10px; color:var(--muted)}
+  .cand .stat b{color:var(--ink); font-variant-numeric:tabular-nums}
+  .oddsbar{height:8px; background:var(--panel2); border-radius:99px; margin-top:6px; overflow:hidden}
+  .oddsbar i{display:block; height:100%; background:linear-gradient(90deg,var(--pink),var(--purple))}
+  .wintag{position:absolute; top:-11px; left:50%; transform:translateX(-50%); background:var(--gold);
+    color:#3a2a00; font-size:11px; font-weight:800; padding:3px 12px; border-radius:99px;
+    text-transform:uppercase; letter-spacing:.08em; opacity:0; transition:.3s}
+  .cand.winner .wintag{opacity:1}
+  .tally{margin-top:16px; font-size:13px; color:var(--muted); font-variant-numeric:tabular-nums}
+  .tally b{color:var(--ink)}
+  .roll{font-size:12px; color:var(--muted); margin-top:8px; font-family:ui-monospace,Menlo,monospace; min-height:18px}
+
+  /* final list */
+  .final{margin-left:48px; max-width:720px}
+  .row{display:flex; align-items:center; gap:14px; background:var(--panel); border:1px solid var(--line);
+    border-radius:12px; padding:14px 16px; margin-bottom:10px; position:relative;
+    opacity:0; transform:translateX(-12px); transition:.5s}
+  .row.show{opacity:1; transform:none}
+  .rank{flex:0 0 auto; width:30px; height:30px; border-radius:8px; background:var(--panel2);
+    display:grid; place-items:center; font-weight:800; color:var(--muted)}
+  .row .rname{font-weight:700; font-size:16px}
+  .row .rmeta{font-size:12px; color:var(--muted)}
+  .row.boosted{border-color:var(--gold); background:linear-gradient(90deg,rgba(245,179,66,.08),var(--panel))}
+  .row.boosted .rank{background:var(--gold); color:#3a2a00}
+  .badge-spon{margin-left:auto; background:var(--gold); color:#3a2a00; font-size:11px; font-weight:800;
+    padding:4px 11px; border-radius:99px; text-transform:uppercase; letter-spacing:.06em}
+  .badge-hidden{margin-left:auto; font-size:11px; color:var(--muted); font-style:italic}
+  .pos-note{margin-left:auto; font-size:11px}
+
+  .insight{margin-top:26px; margin-left:48px; background:linear-gradient(135deg,rgba(255,111,111,.09),rgba(245,179,66,.06));
+    border:1px solid rgba(255,111,111,.3); border-radius:14px; padding:20px 22px; max-width:720px}
+  .insight h3{margin:0 0 8px; color:var(--red); font-size:16px; display:flex; align-items:center; gap:8px}
+  .insight p{margin:0; color:#d6dee7}
+  .insight b{color:var(--gold)}
+
+  footer{margin-top:60px; margin-left:48px; color:var(--muted); font-size:12.5px; border-top:1px solid var(--line); padding-top:18px}
+  code{background:var(--panel2); padding:2px 6px; border-radius:5px; font-size:12.5px; color:#c6d4e2}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="hero">
+    <span class="kicker">Interactive · Sponsored Search Boosting</span>
+    <h1>What happens when a user searches “Semaglutide”</h1>
+    <p class="sub">A step-by-step, click-through view of how the search engine decides which paid content jumps to the top — and how many actually do.</p>
+    <div class="searchbar">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4ea1ff" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+      <div>
+        <div class="lbl">Search term</div>
+        <div class="q">Semaglutide</div>
+      </div>
+    </div>
+  </header>
+
+  <!-- STEP 1 -->
+  <section>
+    <div class="step-head"><div class="step-num">1</div><h2>The content that matched</h2></div>
+    <p class="step-desc">Five pieces of content came back from the search. Each carries labels describing what it is — brand originator, sponsored, keyword-tagged, or a plain active-ingredient match. The number in the corner is its raw relevance score.</p>
+    <div class="cards" id="cards"></div>
+  </section>
+
+  <!-- STEP 2 -->
+  <section>
+    <div class="step-head"><div class="step-num">2</div><h2>Sorting into piles</h2></div>
+    <p class="step-desc">The function drops each result into one of four buckets based on its labels and whether the user qualifies (profession, location, campaign dates). Press the button to sort them.</p>
+    <div class="controls"><button class="btn" id="sortBtn">Sort into buckets →</button></div>
+    <div class="buckets">
+      <div class="bucket">
+        <h3><span class="dot" style="background:var(--pink)"></span>Tag matches</h3>
+        <div class="desc">Paid to appear for the keyword “Semaglutide”. These go into a lottery.</div>
+        <div id="b-tag"></div>
+      </div>
+      <div class="bucket">
+        <h3><span class="dot" style="background:var(--gold)"></span>Originators</h3>
+        <div class="desc">Sponsored original brand-name medicine. All qualifying ones are kept.</div>
+        <div id="b-orig"></div>
+      </div>
+      <div class="bucket">
+        <h3><span class="dot" style="background:var(--purple)"></span>Other sponsored</h3>
+        <div class="desc">Other paid content the user qualifies for. (None in this scenario.)</div>
+        <div id="b-spon"></div>
+      </div>
+      <div class="bucket">
+        <h3><span class="dot" style="background:var(--green)"></span>Everything else</h3>
+        <div class="desc">Normal results, ranked by relevance score.</div>
+        <div id="b-other"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- STEP 3 -->
+  <section>
+    <div class="step-head"><div class="step-num">3</div><h2>The lottery: Extensior vs SEMAGARD</h2></div>
+    <p class="step-desc">Both paid for the same keyword, so only <b>one</b> can take the top slot. The winner is drawn using the real formula from the code: <code>score × random^(1 / weight)</code>. A higher paid weight means better odds — but it’s never guaranteed. The loser drops back into the normal results.</p>
+    <div class="controls">
+      <button class="btn" id="rollBtn">🎲 Run lottery</button>
+      <button class="btn ghost" id="roll1000">Run 1,000× (show the odds)</button>
+    </div>
+    <div class="lottery">
+      <div class="lot-grid">
+        <div class="cand" id="cand-ext">
+          <div class="wintag">Winner</div>
+          <div class="cname">Extensior</div>
+          <div class="stat"><span>Relevance score</span><b>0.85</b></div>
+          <div class="stat"><span>Paid weight</span><b>2</b></div>
+          <div class="oddsbar"><i style="width:29%"></i></div>
+          <div class="stat"><span>Roughly</span><b>~29% win odds</b></div>
+        </div>
+        <div class="cand" id="cand-sem">
+          <div class="wintag">Winner</div>
+          <div class="cname">SEMAGARD</div>
+          <div class="stat"><span>Relevance score</span><b>0.80</b></div>
+          <div class="stat"><span>Paid weight</span><b>5</b></div>
+          <div class="oddsbar"><i style="width:71%"></i></div>
+          <div class="stat"><span>Roughly</span><b>~71% win odds</b></div>
+        </div>
+      </div>
+      <div class="roll" id="rollDetail"></div>
+      <div class="tally" id="tally">No draws yet. SEMAGARD paid more, so it should win more often — but not always.</div>
+    </div>
+  </section>
+
+  <!-- STEP 4 -->
+  <section>
+    <div class="step-head"><div class="step-num">4</div><h2>The final ranked list</h2></div>
+    <p class="step-desc">The function stitches everything together: the lottery winner first, then the originator (Wegovy), then the normal results by score — with the lottery loser mixed back in. Run the lottery above, then build the list.</p>
+    <div class="controls"><button class="btn" id="buildBtn">Build final results →</button></div>
+    <div class="final" id="final"></div>
+  </section>
+
+  <div class="insight">
+    <h3>⚠️ The thing worth noticing</h3>
+    <p><b>Two</b> paid results (the lottery winner <i>and</i> Wegovy) end up sitting above the organic “Semaglutide” ingredient results — but only the <b>first</b> one is stamped with the “Sponsored” label. Wegovy gets the premium top position without wearing the badge. That’s the behaviour behind the “2 boosted results” observation.</p>
+  </div>
+
+  <footer>
+    Scenario: search <code>Semaglutide</code> · Originator <code>Wegovy</code> · Lottery candidates <code>Extensior</code>, <code>SEMAGARD</code> · Ingredients <code>Semaglutide (PFP)</code>, <code>Semaglutide (PED)</code>.<br>
+    Lottery math mirrors <code>weightedProbabilisticRank()</code> in <code>src/platform/contentPlacement.ts</code>. Illustrative scores/weights.
+  </footer>
+
+</div>
+
+<script>
+  // ---- data ----
+  const items = [
+    {id:"sem",  name:"SEMAGARD",           meta:"Sponsored drug · keyword-tagged", score:0.80, weight:5, tags:[["Sponsored","t-spon"],["Tag: Semaglutide","t-tag"]], bucket:"tag"},
+    {id:"ext",  name:"Extensior",          meta:"Sponsored drug · keyword-tagged", score:0.85, weight:2, tags:[["Sponsored","t-spon"],["Tag: Semaglutide","t-tag"]], bucket:"tag"},
+    {id:"weg",  name:"Wegovy",             meta:"Originator brand · sponsored",    score:0.78, tags:[["Originator","t-orig"],["Sponsored","t-spon"]], bucket:"orig"},
+    {id:"pfp",  name:"Semaglutide (PFP)",  meta:"Active ingredient · title match", score:1.80, tags:[["Ingredient","t-ingr"],["Title match ×2","t-ingr"]], bucket:"other"},
+    {id:"ped",  name:"Semaglutide (PED)",  meta:"Active ingredient · title match", score:1.76, tags:[["Ingredient","t-ingr"],["Title match ×2","t-ingr"]], bucket:"other"},
+  ];
+
+  // ---- step 1: render cards ----
+  const cardWrap = document.getElementById("cards");
+  items.forEach(it=>{
+    const el=document.createElement("div"); el.className="card";
+    el.innerHTML = `<div class="score">${it.score.toFixed(2)}</div>
+      <div class="name">${it.name}</div><div class="meta">${it.meta}</div>
+      <div>${it.tags.map(t=>`<span class="tag ${t[1]}">${t[0]}</span>`).join("")}</div>`;
+    cardWrap.appendChild(el);
+  });
+
+  // ---- step 2: sort into buckets ----
+  const targets={tag:"b-tag",orig:"b-orig",spon:"b-spon",other:"b-other"};
+  document.getElementById("sortBtn").addEventListener("click", function(){
+    this.disabled=true;
+    const order=[...items].sort((a,b)=>b.score-a.score);
+    order.forEach((it,i)=>{
+      setTimeout(()=>{
+        const chip=document.createElement("div"); chip.className="chip";
+        chip.innerHTML=`${it.name}<small>score ${it.score.toFixed(2)}${it.weight?` · weight ${it.weight}`:""}</small>`;
+        document.getElementById(targets[it.bucket]).appendChild(chip);
+        requestAnimationFrame(()=>chip.classList.add("show"));
+      }, i*260);
+    });
+  });
+
+  // ---- step 3: lottery (real formula) ----
+  let currentWinner=null, tallyExt=0, tallySem=0;
+  const cands=[{id:"ext",name:"Extensior",score:0.85,weight:2},{id:"sem",name:"SEMAGARD",score:0.80,weight:5}];
+
+  function drawOnce(){
+    // adjustedScore = score * Math.pow(random, 1/weight)   (randomness = 1.0)
+    return cands.map(c=>({...c, adj:c.score*Math.pow(Math.random(),1/c.weight)}))
+                .sort((a,b)=>b.adj-a.adj);
+  }
+  function paintWinner(id){
+    document.getElementById("cand-ext").classList.toggle("winner", id==="ext");
+    document.getElementById("cand-sem").classList.toggle("winner", id==="sem");
+  }
+  document.getElementById("rollBtn").addEventListener("click",()=>{
+    const r=drawOnce(); currentWinner=r[0];
+    r[0].id==="ext"?tallyExt++:tallySem++;
+    paintWinner(r[0].id);
+    document.getElementById("rollDetail").textContent =
+      `Extensior → ${(r.find(x=>x.id==="ext").adj).toFixed(3)}   |   SEMAGARD → ${(r.find(x=>x.id==="sem").adj).toFixed(3)}   ⇒  winner: ${r[0].name}`;
+    updateTally();
+  });
+  document.getElementById("roll1000").addEventListener("click",()=>{
+    let e=0,s=0,last;
+    for(let i=0;i<1000;i++){const r=drawOnce(); r[0].id==="ext"?e++:s++; last=r;}
+    tallyExt+=e; tallySem+=s; currentWinner=last[0]; paintWinner(last[0].id);
+    document.getElementById("rollDetail").textContent="Ran 1,000 draws using the real weighted-random formula.";
+    updateTally();
+  });
+  function updateTally(){
+    const tot=tallyExt+tallySem;
+    document.getElementById("tally").innerHTML=
+      `Wins so far — <b>Extensior ${tallyExt}</b> (${(100*tallyExt/tot).toFixed(1)}%) · <b>SEMAGARD ${tallySem}</b> (${(100*tallySem/tot).toFixed(1)}%) · total ${tot} draws`;
+  }
+
+  // ---- step 4: final ordered list ----
+  document.getElementById("buildBtn").addEventListener("click",function(){
+    if(!currentWinner){ alert("Run the lottery in step 3 first 🙂"); return; }
+    const winId=currentWinner.id;
+    const loser = winId==="ext" ? {name:"SEMAGARD",score:0.80} : {name:"Extensior",score:0.85};
+    const win   = winId==="ext" ? {name:"Extensior",score:0.85} : {name:"SEMAGARD",score:0.80};
+
+    // otherResults = ingredients + lottery loser, sorted by score desc
+    const others=[{name:"Semaglutide (PFP)",score:1.80},{name:"Semaglutide (PED)",score:1.76},loser]
+                 .sort((a,b)=>b.score-a.score);
+
+    const ranked=[
+      {name:win.name,   note:"Lottery winner",           kind:"boosted"},
+      {name:"Wegovy",   note:"Originator brand",          kind:"hidden"},
+      ...others.map(o=>({name:o.name, note:`Organic · score ${o.score.toFixed(2)}`, kind:"plain"}))
+    ];
+
+    const wrap=document.getElementById("final"); wrap.innerHTML="";
+    ranked.forEach((r,i)=>{
+      const row=document.createElement("div");
+      row.className="row"+(r.kind==="boosted"?" boosted":"");
+      let right = r.kind==="boosted" ? `<span class="badge-spon">★ Sponsored</span>`
+                : r.kind==="hidden"  ? `<span class="badge-hidden">boosted position · not labelled</span>`
+                : `<span class="pos-note" style="color:var(--muted)">—</span>`;
+      row.innerHTML=`<div class="rank">${i+1}</div>
+        <div><div class="rname">${r.name}</div><div class="rmeta">${r.note}</div></div>${right}`;
+      wrap.appendChild(row);
+      setTimeout(()=>row.classList.add("show"), i*180);
+    });
+  });
+</script>
+</body>
+</html>
